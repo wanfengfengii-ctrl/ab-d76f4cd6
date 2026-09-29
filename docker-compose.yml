@@ -1,0 +1,48 @@
+services:
+  # 健康站点：宿主机端口由环境变量 WEB_PORT 决定
+  web:
+    build:
+      context: .
+      target: runner
+    image: substation-lamp-review-web
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "8080"
+    ports:
+      - "${WEB_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "node", "scripts/healthcheck.mjs"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+  # 一次性校验服务：依次完成代码测试、构建、轨迹求解冒烟、健康请求，
+  # 全部成功后以 0 自行退出；任一步失败即以非零退出码报告。
+  verify:
+    build:
+      context: .
+      target: builder
+    image: substation-lamp-review-verify
+    environment:
+      HOST: web
+      PORT: "8080"
+    depends_on:
+      web:
+        condition: service_healthy
+    restart: "no"
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        echo "==> [1/4] 代码测试（vitest）"
+        npm test
+        echo "==> [2/4] 生产构建（tsc 类型检查 + vite build）"
+        npm run build
+        echo "==> [3/4] 轨迹求解冒烟（正常 / 卡滞故障 / 不可解释）"
+        npm run smoke
+        echo "==> [4/4] 对健康站点发起健康请求 http://web:8080/healthz"
+        node scripts/healthcheck.mjs
+        echo "==> verify 全部通过，退出码 0"
