@@ -1,0 +1,35 @@
+services:
+  web:
+    build:
+      context: .
+      target: runtime
+    image: substation-review-web
+    ports:
+      # 宿主机端口由 WEB_PORT 配置，容器内固定 80
+      - "${WEB_PORT:-8080}:80"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  verify:
+    build:
+      context: .
+      target: builder
+    image: substation-review-verify
+    restart: "no"
+    depends_on:
+      web:
+        condition: service_healthy
+    environment:
+      HEALTH_URL: http://web/healthz
+    # 单元测试 → 生产构建 → 轨迹求解冒烟 → 对 web 的健康请求；
+    # 任一步失败容器即以非零退出码结束，成功后自行退出 0。
+    command: >
+      sh -c "npm test &&
+             npm run build &&
+             npm run smoke &&
+             npm run health"

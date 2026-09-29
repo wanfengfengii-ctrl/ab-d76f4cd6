@@ -1,0 +1,29 @@
+{
+  "name": "substation-switch-review",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "变电站切换试验指示灯序列复核",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host",
+    "test": "vitest run",
+    "smoke": "tsx scripts/smoke.ts",
+    "health": "tsx scripts/healthcheck.ts"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vite": "^5.4.11",
+    "vitest": "^2.1.8"
+  }
+}
